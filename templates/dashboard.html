@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block body %}
+    {% load staticfiles %}
+
+    <script src="{% static "lib/raphael-2.1.4.min.js" %}"></script>
+    <script src="{% static "lib/justgage.js" %}"></script>
+
+    <div class="row info-header" style="margin-left: 0; margin-right: 0;">
+        <div class="col s1 center-align"><h5>#</h5></div>
+        <div class="col s4"><h5>Name</h5></div>
+        <div class="col s2"><h5>Price <span style="color: #B0B0B0;">/oz</span></h5></div>
+        <div class="col s2"><h5>Fill Date</h5></div>
+        <div class="col s3"><h5>Level</h5></div>
+    </div>
+
+    {% for k in kegs %}
+        <ul class="collapsible" data-collapsible="expandable">
+            <li>
+                <div class="collapsible-header">
+                    <div class="row">
+                        <div class="col s1 center">
+                            <div class="number-circle">
+                                <div>
+                                    {{ k.tap }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col s4">
+                            {% ifequal k.beverage None %}
+                                N/A
+                            {% else %}
+                                <ul class="data-item">
+                                    <li>{{ k.beverage.name }}</li>
+
+                                    {% ifnotequal k.beverage.brewery None %}
+                                        <li>{{ k.beverage.brewery }}</li>
+                                    {% endifnotequal %}
+
+                                    {% ifnotequal k.beverage.type None %}
+                                        <li>{{ k.beverage.type }}</li>
+                                    {% endifnotequal %}
+                                </ul>
+                            {% endifequal %}
+                        </div>
+                        <div class="col s2">
+                            <ul class="data-item">
+                                {% ifnotequal k.price None %}
+                                    <li>${{ k.price_per_oz|stringformat:".2f" }}</li>
+                                    <li>(last pour: ${{ k.last_pour|stringformat:".2f" }})</li>
+                                {% else %}
+                                    <li>N/A</li>
+                                {% endifnotequal %}
+                            </ul>
+                        </div>
+                        <div class="col s2">
+                            <ul class="data-item">
+                                <li>
+                                    {% ifequal k.fill_date None %}
+                                        N/A
+                                    {% else %}
+                                        {{ k.fill_date }}
+                                    {% endifequal %}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col s3"><div id="level{{ forloop.counter0 }}" class="level"></div></div>
+                    </div>
+                </div>
+                <div class="collapsible-body extra-keg-info">
+                    <div>
+                        {% ifnotequal k.beverage None %}
+                            <ul>
+                                {% ifnotequal k.beverage.ABV None %}
+                                    <li><span class="bold">ABV: </span> {{ k.beverage.ABV|stringformat:".1f" }}%</li>
+                                {% endifnotequal %}
+
+                                {% ifnotequal k.beverage.tasting_notes None %}
+                                    <li><span class="bold">Tasting notes: </span> {{ k.beverage.tasting_notes }}</li>
+                                {% endifnotequal %}
+                            </ul>
+                        {% endifnotequal %}
+                    </div><div>
+                        <div class="right">
+                            <a class="dropdown-button btn-flat right" href="#" data-activates="dropdown{{ forloop.counter }}" data-stopPropagation="true"><i class="material-icons">settings</i></a>
+                            <ul id="dropdown{{ forloop.counter }}" class='dropdown-content'>
+                                <li><a href="{% url "edit keg" pk=k.pk %}"><i class="material-icons">mode_edit</i>edit</a></li>
+                                <li><a href="{% url "remove keg" pk=k.pk %}" onclick="popup_confirm()"><i class="material-icons">delete</i>delete</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    {% endfor %}
+{% endblock body %}
+
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{% static "css/dashboard.css" %}">
+{% endblock css %}
+
+{% block script %}
+    <script>
+        function createGauge(keg) {
+            return new JustGage({
+                id: keg.id,
+                value: keg.value,
+                min: 0,
+                max: keg.capacity,
+                label: "oz",
+                levelColors: ["#ff0000", "#f9c802", "#a9d70b"],
+                hideMinMax: true,
+                relativeGaugeSize: true
+            });
+        }
+
+        var gauges = [];
+
+        {% for k in kegs %}
+            gauges.push(createGauge({
+                id: "level{{ forloop.counter0 }}",
+                value: {{ k.capacity }},
+                capacity: {{ k.capacity }}
+            }));
+        {% endfor %}
+
+        for(var g of gauges)  // TODO: refactor and put info in data fields in html
+            (function(g) {
+                setInterval(function () {
+                    g.refresh(g.config.value - 0.1);
+                }, 100);
+            })(g);
+    </script>
+{% endblock script %}

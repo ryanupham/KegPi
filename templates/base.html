@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KegPi</title>
+
+    {% include 'material/includes/material_css.html' %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    {% load staticfiles %}
+
+    {% block css %}{% endblock css %}
+</head>
+
+<body>
+    <nav>
+        <div class="nav-wrapper">
+            <ul class="left">
+                <li><a id="menu_button" href="#" data-activates="sidebar"><i class="material-icons">menu</i></a></li>
+            </ul>
+            <a href="/" class="brand-logo center">KegPi</a>
+        </div>
+    </nav>
+
+    <ul id="sidebar" class="side-nav">
+        <li><a class="waves-effect" href="/"><i class="material-icons">home</i>Home</a></li>
+        <li><div class="divider"></div></li>
+        <li><a class="waves-effect" href="/view_beverages/">Beverages</a></li>
+        <li><a class="waves-effect" href="/view_kegs/">Kegs</a></li>
+        <li><a class="waves-effect" href="/view_tanks/">Gas tanks</a></li>
+        <li><a class="waves-effect" href="/view_sensors/">Sensors</a></li>
+        <li><div class="divider"></div></li>
+        <li><a class="waves-effect" href="#!"><i class="material-icons">settings</i>Settings</a></li>
+    </ul>
+
+    <br>
+
+    <div class="container">
+        {% block body %}{% endblock body %}
+    </div>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    {% include 'material/includes/material_js.html' %}
+
+    <script>
+        function popup_confirm() {
+            if(!confirm("Are you sure you want to remove this item?"))
+                event.preventDefault();
+        }
+
+        $(document).ready(function() {
+            $("#menu_button").sideNav();
+        });
+    </script>
+
+    {% block script %}{% endblock script %}
+
+</body>
+</html>

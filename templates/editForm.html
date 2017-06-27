@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% load material_form %}
+
+{% block body %}
+    <form method="post">
+        {% csrf_token %}
+
+        {% ifnotequal id None %}
+            <input type="hidden" name="old-id" value="{{ id }}">
+        {% endifnotequal %}
+
+        {% form form=form %}{% endform %}
+        <input type="submit" value="Submit" />
+    </form>
+{% endblock body %}
