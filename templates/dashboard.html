@@ -27,59 +27,55 @@
                             </div>
                         </div>
                         <div class="col s4">
-                            {% ifequal k.beverage None %}
-                                N/A
-                            {% else %}
+                            {% if k.beverage %}
                                 <ul class="data-item">
                                     <li>{{ k.beverage.name }}</li>
 
-                                    {% ifnotequal k.beverage.brewery None %}
+                                    {% if k.beverage.brewery %}
                                         <li>{{ k.beverage.brewery }}</li>
-                                    {% endifnotequal %}
+                                    {% endif %}
 
-                                    {% ifnotequal k.beverage.type None %}
+                                    {% if k.beverage.type %}
                                         <li>{{ k.beverage.type }}</li>
-                                    {% endifnotequal %}
+                                    {% endif %}
                                 </ul>
-                            {% endifequal %}
+                            {% else %}
+                                N/A
+                            {% endif %}
                         </div>
                         <div class="col s2">
                             <ul class="data-item">
-                                {% ifnotequal k.price None %}
+                                {% if k.price %}
                                     <li>${{ k.price_per_oz|stringformat:".2f" }}</li>
                                     <li>(last pour: ${{ k.last_pour|stringformat:".2f" }})</li>
                                 {% else %}
                                     <li>N/A</li>
-                                {% endifnotequal %}
+                                {% endif %}
                             </ul>
                         </div>
                         <div class="col s2">
                             <ul class="data-item">
                                 <li>
-                                    {% ifequal k.fill_date None %}
-                                        N/A
-                                    {% else %}
-                                        {{ k.fill_date }}
-                                    {% endifequal %}
+                                    {{ k.fill_date|default:"N/A" }}
                                 </li>
                             </ul>
                         </div>
-                        <div class="col s3"><div id="level{{ forloop.counter0 }}" class="level"></div></div>
+                        <div class="col s3"><div id="level{{ k.pk }}" class="level" data-capacity="{{ k.capacity }}" data-pk="{{ k.pk }}"></div></div>
                     </div>
                 </div>
                 <div class="collapsible-body extra-keg-info">
                     <div>
-                        {% ifnotequal k.beverage None %}
+                        {% if k.beverage %}
                             <ul>
-                                {% ifnotequal k.beverage.ABV None %}
+                                {% if k.beverage.ABV %}
                                     <li><span class="bold">ABV: </span> {{ k.beverage.ABV|stringformat:".1f" }}%</li>
-                                {% endifnotequal %}
+                                {% endif %}
 
-                                {% ifnotequal k.beverage.tasting_notes None %}
+                                {% if k.beverage.tasting_notes %}
                                     <li><span class="bold">Tasting notes: </span> {{ k.beverage.tasting_notes }}</li>
-                                {% endifnotequal %}
+                                {% endif %}
                             </ul>
-                        {% endifnotequal %}
+                        {% endif %}
                     </div><div>
                         <div class="right">
                             <a class="dropdown-button btn-flat right" href="#" data-activates="dropdown{{ forloop.counter }}" data-stopPropagation="true"><i class="material-icons">settings</i></a>
@@ -92,6 +88,8 @@
                 </div>
             </li>
         </ul>
+    {% empty %}
+        No kegs have been configured
     {% endfor %}
 {% endblock body %}
 
@@ -116,19 +114,23 @@
 
         var gauges = [];
 
-        {% for k in kegs %}
-            gauges.push(createGauge({
-                id: "level{{ forloop.counter0 }}",
-                value: {{ k.capacity }},
-                capacity: {{ k.capacity }}
-            }));
-        {% endfor %}
+        $(".level").each(function(ind, val) {
+            var gauge = createGauge({
+                id: val.id,
+                value: 0,
+                capacity: val.dataset.capacity
+            });
+            gauge.pk = val.dataset.pk;
 
-        for(var g of gauges)  // TODO: refactor and put info in data fields in html
-            (function(g) {
-                setInterval(function () {
-                    g.refresh(g.config.value - 0.1);
-                }, 100);
-            })(g);
+            gauges.push(gauge);
+        });
+
+        setInterval(function() {
+            $.ajax("{% url "sensor readings" %}").done(function(msg) {
+                for(g of gauges)
+                    if(g.pk in msg)
+                        g.refresh(msg[g.pk]);
+            });
+        }, 250);
     </script>
 {% endblock script %}

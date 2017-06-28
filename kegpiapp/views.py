@@ -1,6 +1,8 @@
+from random import randint
+
 from django.contrib import messages
 from django.forms.models import modelform_factory
-from django.http.response import HttpResponseRedirect
+from django.http.response import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls.base import reverse
 
@@ -104,3 +106,7 @@ def view_kegs(request):
 def view_sensors(request):
     return _view_items(request, CapacitySensorModel.objects.all(), "Sensors", "new sensor", "edit sensor",
                        "remove sensor")
+
+
+def get_sensor_readings(request):
+    return JsonResponse({keg.pk: keg.sensor.reading() + randint(0, 30) for keg in KegModel.objects.all() if keg.sensor})

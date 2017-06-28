@@ -1,5 +1,4 @@
 from django.db import models
-from django.forms.models import modelform_factory
 
 
 class CapacitySensorModel(models.Model):  # Maybe should refactor into two sensor models
@@ -48,7 +47,7 @@ class CapacitySensorModel(models.Model):  # Maybe should refactor into two senso
             self._sensor = self.WeightSensor(self)
 
     def reading(self):
-        if hasattr(self, "sensor"):
+        if hasattr(self, "_sensor"):
             return self._sensor.reading()
 
         return 0
