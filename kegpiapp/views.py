@@ -109,4 +109,4 @@ def view_sensors(request):
 
 
 def get_sensor_readings(request):
-    return JsonResponse({keg.pk: keg.current_level + randint(0, 30) if keg.sensor else 0 for keg in KegModel.objects.all()})
+    return JsonResponse({keg.pk: keg.current_level if keg.sensor else 0 for keg in KegModel.objects.all()})

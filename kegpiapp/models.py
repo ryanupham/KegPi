@@ -4,10 +4,13 @@ from django.db import models
 class FlowSensorModel(models.Model):
     def _pulse(self):
         if hasattr(self, "kegmodel"):
-            self.kegmodel.current_level -= self.volume_per_pulse
+            OZ_PER_ML = 0.033814
+            self.kegmodel.current_level -= self.volume_per_pulse * OZ_PER_ML
 
             if self.kegmodel.current_level < 0:
                 self.kegmodel.current_level = 0
+
+            self.kegmodel.save()
 
     pin = models.PositiveIntegerField(unique=True)
     volume_per_pulse = models.FloatField(default=0, help_text="Volume in ml per pulse of the sensor", blank=True)
@@ -63,13 +66,12 @@ class KegModel(models.Model):
     )
 
     beverage = models.ForeignKey(BeverageModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
-    fill_date = models.DateField(default=None, null=True, blank=True)
+    tap = models.PositiveIntegerField(unique=True, default=None, null=True, blank=True)
     capacity = models.PositiveIntegerField(choices=CAPACITY_CHOICES)
     current_level = models.FloatField(default=0)
-    sensor = models.OneToOneField(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
-    # density = models.FloatField(help_text="Density of the beverage in kg/l", default=0, blank=True)
-    tap = models.PositiveIntegerField(unique=True, default=None, null=True, blank=True)
     price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)  # maybe should be per beverage?
+    sensor = models.OneToOneField(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
+    fill_date = models.DateField(default=None, null=True, blank=True)
 
     @property
     def price_per_oz(self):

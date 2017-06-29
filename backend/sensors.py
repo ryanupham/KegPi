@@ -1,4 +1,4 @@
-from django.db.models.signals import pre_save, post_save, pre_delete
+from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
 
 from kegpiapp.models import FlowSensorModel
