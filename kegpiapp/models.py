@@ -2,7 +2,7 @@ from django.db import models
 
 
 class FlowSensorModel(models.Model):
-    def _pulse(self):
+    def _pulse(self, channel):
         if hasattr(self, "kegmodel"):
             OZ_PER_ML = 0.033814
             self.kegmodel.current_level -= self.volume_per_pulse * OZ_PER_ML
