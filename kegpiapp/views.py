@@ -6,7 +6,6 @@ from django.http.response import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls.base import reverse
 
-from kegpiapp.forms import KegForm
 from kegpiapp.models import FlowSensorModel, BeverageModel, KegModel
 
 
@@ -70,13 +69,14 @@ def edit_beverage(request, pk=None):
 
 
 def edit_keg(request, pk=None):
+    form_factory = modelform_factory(KegModel, exclude=())
     model = KegModel.objects.get(pk=pk) if pk else None
 
-    return _edit(request, "view kegs", KegForm, KegModel, model)
+    return _edit(request, "view kegs", form_factory, KegModel, model)
 
 
 def edit_sensor(request, pk=None):
-    form_factory = modelform_factory(FlowSensorModel, exclude=("kg_per_volt", "zero_offset"))
+    form_factory = modelform_factory(FlowSensorModel, exclude=())
     model = FlowSensorModel.objects.get(pk=pk) if pk else None  # TODO: check if valid pk
 
     return _edit(request, "view sensors", form_factory, FlowSensorModel, model)

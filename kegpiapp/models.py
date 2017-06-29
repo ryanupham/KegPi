@@ -67,7 +67,7 @@ class KegModel(models.Model):
     capacity = models.PositiveIntegerField(choices=CAPACITY_CHOICES)
     current_level = models.FloatField(default=0)
     sensor = models.OneToOneField(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
-    density = models.FloatField(help_text="Density of the beverage in kg/l", default=0, blank=True)
+    # density = models.FloatField(help_text="Density of the beverage in kg/l", default=0, blank=True)
     tap = models.PositiveIntegerField(unique=True, default=None, null=True, blank=True)
     price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)  # maybe should be per beverage?
 
