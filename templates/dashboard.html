@@ -6,15 +6,17 @@
     <script src="{% static "lib/raphael-2.1.4.min.js" %}"></script>
     <script src="{% static "lib/justgage.js" %}"></script>
 
-    <div class="row info-header" style="margin-left: 0; margin-right: 0;">
-        <div class="col s1 center-align"><h5>#</h5></div>
-        <div class="col s4"><h5>Name</h5></div>
-        <div class="col s2"><h5>Price <span style="color: #B0B0B0;">/oz</span></h5></div>
-        <div class="col s2"><h5>Fill Date</h5></div>
-        <div class="col s3"><h5>Level</h5></div>
-    </div>
-
     {% for k in kegs %}
+        {% if forloop.first %}
+            <div class="row info-header" style="margin-left: 0; margin-right: 0;">
+                <div class="col s1 center-align"><h5>#</h5></div>
+                <div class="col s4"><h5>Name</h5></div>
+                <div class="col s2"><h5>Price <span style="color: #B0B0B0;">/oz</span></h5></div>
+                <div class="col s2"><h5>Fill Date</h5></div>
+                <div class="col s3"><h5>Level</h5></div>
+            </div>
+        {% endif %}
+
         <ul class="collapsible" data-collapsible="expandable">
             <li>
                 <div class="collapsible-header">
@@ -89,7 +91,7 @@
             </li>
         </ul>
     {% empty %}
-        No kegs have been configured
+        <div class="center-align"><h5>No kegs have been configured {# TODO: Create header in if(first), and make this centered and larger #}</h5></div>
     {% endfor %}
 {% endblock body %}
 

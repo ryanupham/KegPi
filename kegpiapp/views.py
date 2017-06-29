@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django.urls.base import reverse
 
 from kegpiapp.forms import KegForm
-from kegpiapp.models import CapacitySensorModel, BeverageModel, KegModel
+from kegpiapp.models import FlowSensorModel, BeverageModel, KegModel
 
 
 def view_main(request):
@@ -76,10 +76,10 @@ def edit_keg(request, pk=None):
 
 
 def edit_sensor(request, pk=None):
-    form_factory = modelform_factory(CapacitySensorModel, exclude=("kg_per_volt", "zero_offset"))
-    model = CapacitySensorModel.objects.get(pk=pk) if pk else None  # TODO: check if valid pk
+    form_factory = modelform_factory(FlowSensorModel, exclude=("kg_per_volt", "zero_offset"))
+    model = FlowSensorModel.objects.get(pk=pk) if pk else None  # TODO: check if valid pk
 
-    return _edit(request, "view sensors", form_factory, CapacitySensorModel, model)
+    return _edit(request, "view sensors", form_factory, FlowSensorModel, model)
 
 
 def remove_beverage(request, pk):
@@ -91,7 +91,7 @@ def remove_keg(request, pk):
 
 
 def remove_sensor(request, pk):
-    return _remove(request, "view sensors", pk, CapacitySensorModel)
+    return _remove(request, "view sensors", pk, FlowSensorModel)
 
 
 def view_beverages(request):
@@ -104,9 +104,9 @@ def view_kegs(request):
 
 
 def view_sensors(request):
-    return _view_items(request, CapacitySensorModel.objects.all(), "Sensors", "new sensor", "edit sensor",
+    return _view_items(request, FlowSensorModel.objects.all(), "Sensors", "new sensor", "edit sensor",
                        "remove sensor")
 
 
 def get_sensor_readings(request):
-    return JsonResponse({keg.pk: keg.sensor.reading() + randint(0, 30) for keg in KegModel.objects.all() if keg.sensor})
+    return JsonResponse({keg.pk: keg.current_level + randint(0, 30) if keg.sensor else 0 for keg in KegModel.objects.all()})
