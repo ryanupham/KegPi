@@ -49,7 +49,7 @@
                             <ul class="data-item">
                                 {% if k.price %}
                                     <li>${{ k.price_per_oz|stringformat:".2f" }}</li>
-                                    <li>(last pour: ${{ k.last_pour|stringformat:".2f" }})</li>
+                                    <li>(last pour: ${{ k.current_pour_cost|stringformat:".2f" }})</li>
                                 {% else %}
                                     <li>N/A</li>
                                 {% endif %}
@@ -91,7 +91,7 @@
             </li>
         </ul>
     {% empty %}
-        <div class="center-align"><h5>No kegs have been configured {# TODO: Create header in if(first), and make this centered and larger #}</h5></div>
+        <div class="center-align"><h5>No kegs have been configured</h5></div>
     {% endfor %}
 {% endblock body %}
 
@@ -128,10 +128,10 @@
         });
 
         setInterval(function() {
-            $.ajax("{% url "sensor readings" %}").done(function(msg) {
+            $.ajax("{% url 'keg info' %}").done(function(msg) {
                 for(g of gauges)
                     if(g.pk in msg)
-                        g.refresh(msg[g.pk]);
+                        g.refresh(msg[g.pk].level);  // TODO: Refresh last pour
             });
         }, 250);
     </script>

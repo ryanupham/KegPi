@@ -1,5 +1,3 @@
-from random import randint
-
 from django.contrib import messages
 from django.forms.models import modelform_factory
 from django.http.response import HttpResponseRedirect, JsonResponse
@@ -69,7 +67,7 @@ def edit_beverage(request, pk=None):
 
 
 def edit_keg(request, pk=None):
-    form_factory = modelform_factory(KegModel, exclude=())
+    form_factory = modelform_factory(KegModel, exclude=("last_pour_volume", "last_pour_time", "current_pour_volume"))
     model = KegModel.objects.get(pk=pk) if pk else None
 
     return _edit(request, "view kegs", form_factory, KegModel, model)
@@ -108,5 +106,10 @@ def view_sensors(request):
                        "remove sensor")
 
 
-def get_sensor_readings(request):
-    return JsonResponse({keg.pk: keg.current_level if keg.sensor else 0 for keg in KegModel.objects.all()})
+def get_keg_info(request):
+    return JsonResponse({
+        keg.pk: {
+            "level": keg.current_level if keg.sensor else 0,
+            "currentPour": keg.current_pour_cost
+        } for keg in KegModel.objects.all()
+    })

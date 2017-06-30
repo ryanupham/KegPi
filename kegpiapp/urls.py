@@ -18,5 +18,5 @@ urlpatterns = [url(r'^$', views.view_main, name="main"),
                url(r'^edit_beverage/(?P<pk>[0-9]+)/remove/$', views.remove_beverage, name="remove beverage"),
                url(r'^view_beverages/$', views.view_beverages, name="view beverages"),
 
-               url(r'^get_levels/$', views.get_sensor_readings, name="sensor readings"),
+               url(r'^keg_info/$', views.get_keg_info, name="keg info"),
                ]
