@@ -110,6 +110,6 @@ def get_keg_info(request):
     return JsonResponse({
         keg.pk: {
             "level": keg.current_level if keg.sensor else 0,
-            "currentPour": keg.current_pour_cost
+            "currentPour": keg.current_pour_cost,
         } for keg in KegModel.objects.all()
     })

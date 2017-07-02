@@ -1,14 +1,17 @@
 from datetime import datetime
 
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+
+from kegpiapp.validators import validate_pin, validate_tap_unique
 
 
 class FlowSensorModel(models.Model):
     OZ_PER_ML = 0.033814
     POUR_TIMEOUT = 10  # Minimum time between pours in seconds
 
-    pin = models.PositiveIntegerField(unique=True)
-    volume_per_pulse = models.FloatField(default=0, help_text="Volume in ml per pulse of the sensor")
+    pin = models.PositiveIntegerField(unique=True, validators=[validate_pin])
+    volume_per_pulse = models.FloatField(default=0, help_text="Volume in ml per pulse of the sensor")  # TODO: minvaluevalidator
 
     def _pulse(self, channel):
         if hasattr(self, "kegmodel"):
@@ -19,7 +22,6 @@ class FlowSensorModel(models.Model):
 
             if self.first_tick:
                 self.first_tick = False
-                self.kegmodel.last_pour_time = datetime.now()
             else:
                 if (datetime.now() - self.kegmodel.last_pour_time).total_seconds() >= FlowSensorModel.POUR_TIMEOUT:
                     self.first_tick = True
@@ -38,15 +40,15 @@ class FlowSensorModel(models.Model):
 
                     self.kegmodel.save()
 
-                self.kegmodel.last_pour_time = datetime.now()
+            self.kegmodel.last_pour_time = datetime.now()
 
     def __str__(self):
         return "Flow sensor (pin " + str(self.pin) + ")"
 
 
 class WeightSensorModel(models.Model):
-    pin1 = models.PositiveIntegerField(unique=True)
-    pin2 = models.PositiveIntegerField(unique=True)
+    pin = models.PositiveIntegerField(unique=True, validators=[validate_pin])
+    # pin2 = models.PositiveIntegerField(unique=True)
     pounds_per_volt = models.FloatField(default=0)
     zero_offset = models.FloatField(default=0)
 
@@ -66,11 +68,12 @@ class WeightSensorModel(models.Model):
         return (self.get_current_weight() - empty_weight) / beverage_weight * self.kegmodel.capacity
 
     def __str__(self):
-        return "Weight sensor (pins " + str(self.pin1) + ", " + str(self.pin2) + ")"
+        return "Weight sensor (pin " + str(self.pin) + ")"
+        #return "Weight sensor (pins " + str(self.pin1) + ", " + str(self.pin2) + ")"
 
 
 class TemperatureSensorModel(models.Model):
-    pin = models.PositiveIntegerField(unique=True)
+    pin = models.PositiveIntegerField(unique=True, validators=[validate_pin])
     degrees_per_volt = models.FloatField(default=0, help_text="Degrees F per volt of the sensor")
     zero_offset = models.FloatField(default=0, help_text="Sensor reading at 0F")
 
@@ -80,13 +83,17 @@ class TemperatureSensorModel(models.Model):
     def reading(self):
         return 0  # TODO: this
 
+    def __str__(self):
+        return "Temperature sensor (pin " + str(self.pin) + ")"
+
 
 class BeverageModel(models.Model):
     beverage_type = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     type = models.CharField(max_length=100, default=None, null=True, blank=True)
     brewery = models.CharField(max_length=100, default=None, null=True, blank=True)
-    ABV = models.FloatField(help_text="ABV of the beverage in percent", default=0, blank=True)
+    ABV = models.FloatField(help_text="ABV of the beverage in percent", default=0, blank=True,
+                            validators=[MinValueValidator(0), MaxValueValidator(100)])
     tasting_notes = models.TextField(default=None, null=True, blank=True)
 
     def __str__(self):
@@ -102,8 +109,13 @@ class TankModel(models.Model):
 
     type = models.CharField(max_length=1, choices=TYPE_CHOICES)
     sensor = models.ForeignKey(WeightSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
-    capacity = models.FloatField(help_text="Capacity of the tank in l")
-    density = models.FloatField(help_text="Density of the gas in kg/l", default=0, blank=True)
+    capacity = models.FloatField(help_text="Capacity of the tank in l", validators=[MinValueValidator(0)])
+    density = models.FloatField(help_text="Density of the gas in kg/l", default=0, blank=True,
+                                validators=[MinValueValidator(0)])
+
+    def __str__(self):
+        types = dict(TankModel.TYPE_CHOICES)
+        return types[self.type] + "(" + str(self.capacity) + "l)"
 
 
 class KegModel(models.Model):
@@ -116,10 +128,12 @@ class KegModel(models.Model):
     )
 
     beverage = models.ForeignKey(BeverageModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
-    tap = models.PositiveIntegerField(unique=True, default=None, null=True, blank=True)  # TODO: 0 if not used
+    tap = models.PositiveIntegerField(unique=True, default=None, null=True, blank=True,
+                                      validators=[validate_tap_unique])
     capacity = models.PositiveIntegerField(choices=CAPACITY_CHOICES)
-    current_level = models.FloatField(default=0)  # TODO: automatically enter full on form page
-    price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
+    current_level = models.FloatField(default=0, validators=[MinValueValidator(0)])  # TODO: automatically enter full on form page
+    price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True,
+                                validators=[MinValueValidator(0)])
     sensor = models.OneToOneField(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
     fill_date = models.DateField(default=None, null=True, blank=True)
     last_pour_time = models.DateTimeField(default=datetime.now)
@@ -143,3 +157,6 @@ class SettingsModel(models.Model):
     number_of_taps = models.PositiveIntegerField(default=1)
     temperature = models.ForeignKey(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True,
                                     blank=True)
+
+
+sensor_models = (FlowSensorModel, WeightSensorModel, TemperatureSensorModel)
