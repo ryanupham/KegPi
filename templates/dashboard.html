@@ -6,93 +6,7 @@
     <script src="{% static "lib/raphael-2.1.4.min.js" %}"></script>
     <script src="{% static "lib/justgage.js" %}"></script>
 
-    {% for k in kegs %}
-        {% if forloop.first %}
-            <div class="row info-header" style="margin-left: 0; margin-right: 0;">
-                <div class="col s1 center-align"><h5>#</h5></div>
-                <div class="col s4"><h5>Name</h5></div>
-                <div class="col s2"><h5>Price <span style="color: #B0B0B0;">/oz</span></h5></div>
-                <div class="col s2"><h5>Fill Date</h5></div>
-                <div class="col s3"><h5>Level</h5></div>
-            </div>
-        {% endif %}
-
-        <ul class="collapsible" data-collapsible="expandable">
-            <li>
-                <div class="collapsible-header">
-                    <div class="row">
-                        <div class="col s1 center">
-                            <div class="number-circle">
-                                <div>
-                                    {{ k.tap }}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col s4">
-                            {% if k.beverage %}
-                                <ul class="data-item">
-                                    <li>{{ k.beverage.name }}</li>
-
-                                    {% if k.beverage.brewery %}
-                                        <li>{{ k.beverage.brewery }}</li>
-                                    {% endif %}
-
-                                    {% if k.beverage.type %}
-                                        <li>{{ k.beverage.type }}</li>
-                                    {% endif %}
-                                </ul>
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </div>
-                        <div class="col s2">
-                            <ul class="data-item">
-                                {% if k.price %}
-                                    <li>${{ k.price_per_oz|stringformat:".2f" }}</li>
-                                    <li>(last pour: ${{ k.current_pour_cost|stringformat:".2f" }})</li>
-                                {% else %}
-                                    <li>N/A</li>
-                                {% endif %}
-                            </ul>
-                        </div>
-                        <div class="col s2">
-                            <ul class="data-item">
-                                <li>
-                                    {{ k.fill_date|default:"N/A" }}
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col s3"><div id="level{{ k.pk }}" class="level" data-capacity="{{ k.capacity }}" data-pk="{{ k.pk }}"></div></div>
-                    </div>
-                </div>
-                <div class="collapsible-body extra-keg-info">
-                    <div>
-                        {% if k.beverage %}
-                            <ul>
-                                {% if k.beverage.ABV %}
-                                    <li><span class="bold">ABV: </span> {{ k.beverage.ABV|stringformat:".1f" }}%</li>
-                                {% endif %}
-
-                                {% if k.beverage.tasting_notes %}
-                                    <li><span class="bold">Tasting notes: </span> {{ k.beverage.tasting_notes }}</li>
-                                {% endif %}
-                            </ul>
-                        {% endif %}
-                    </div><div>
-                        <div class="right">
-                            <a class="dropdown-button btn-flat right" href="#" data-activates="dropdown{{ forloop.counter }}" data-stopPropagation="true"><i class="material-icons">settings</i></a>
-                            <ul id="dropdown{{ forloop.counter }}" class='dropdown-content'>
-                                <li><a href="{% url "edit keg" pk=k.pk %}"><i class="material-icons">mode_edit</i>edit</a></li>
-                                <li><a href="{% url "remove keg" pk=k.pk %}" onclick="popup_confirm()"><i class="material-icons">delete</i>delete</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </li>
-        </ul>
-    {% empty %}
-        <div class="center-align"><h5>No kegs have been configured</h5></div>
-    {% endfor %}
+    <div id="keg-block"></div>
 {% endblock body %}
 
 {% block css %}
@@ -115,24 +29,49 @@
         }
 
         var gauges = [];
+        var ver = -1;
 
-        $(".level").each(function(ind, val) {
-            var gauge = createGauge({
-                id: val.id,
-                value: 0,
-                capacity: val.dataset.capacity
+        function initKegData() {
+            gauges = [];
+
+            $(".level").each(function (ind, val) {
+                var gauge = createGauge({
+                    id: val.id,
+                    value: 0,
+                    capacity: val.dataset.capacity
+                });
+                gauge.pk = val.dataset.pk;
+
+                gauges.push(gauge);
             });
-            gauge.pk = val.dataset.pk;
 
-            gauges.push(gauge);
-        });
+            $('.collapsible').collapsible();
+            $('.dropdown-button').dropdown();
+        }
 
-        setInterval(function() {
+        function reloadKegData() {
+            $("#keg-block").load("{% url 'keg block' %}", initKegData);
+        }
+
+        function refresh() {
             $.ajax("{% url 'keg info' %}").done(function(msg) {
-                for(g of gauges)
-                    if(g.pk in msg)
-                        g.refresh(msg[g.pk].level);  // TODO: Refresh last pour
+                if(ver != msg.ver) {
+                    ver = msg.ver;
+                    reloadKegData();
+                } else {
+                    for (g of gauges)
+                        if (g.pk in msg)
+                            g.refresh(msg[g.pk].level);
+
+                    $(".last-pour").each(function(ind, val) {
+                        if(val.dataset.pk in msg)
+                            $(val).text(msg[val.dataset.pk].currentPour);
+                    })
+                }
             });
-        }, 250);
+        }
+
+        setInterval(refresh, 250);
+        $(refresh);
     </script>
 {% endblock script %}

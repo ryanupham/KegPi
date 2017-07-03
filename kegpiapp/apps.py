@@ -5,4 +5,4 @@ class KegpiappConfig(AppConfig):
     name = 'kegpiapp'
 
     def ready(self):
-        import backend.sensors
+        import kegpiapp.signals

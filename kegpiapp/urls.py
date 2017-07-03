@@ -19,4 +19,5 @@ urlpatterns = [url(r'^$', views.view_main, name="main"),
                url(r'^view_beverages/$', views.view_beverages, name="view beverages"),
 
                url(r'^keg_info/$', views.get_keg_info, name="keg info"),
+               url(r'^keg_block/$', views.get_keg_block, name="keg block"),
                ]

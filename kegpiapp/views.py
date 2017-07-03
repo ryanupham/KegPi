@@ -8,11 +8,7 @@ from kegpiapp.models import FlowSensorModel, BeverageModel, KegModel
 
 
 def view_main(request):
-    context = {
-        "kegs": sorted([k for k in KegModel.objects.all() if k.tap], key=lambda k: k.tap),
-    }
-
-    return render(request, "dashboard.html", context)
+    return render(request, "dashboard.html")
 
 
 def _edit(request, redirect, form_factory, cls, model=None):
@@ -98,7 +94,8 @@ def view_beverages(request):
 
 
 def view_kegs(request):
-    return _view_items(request, KegModel.objects.all(), "Kegs", "new keg", "edit keg", "remove keg")
+    kegs = list(KegModel.objects.filter(tap__gt=0).order_by("tap")) + list(KegModel.objects.exclude(tap__gt=0))
+    return _view_items(request, kegs, "Kegs", "new keg", "edit keg", "remove keg")
 
 
 def view_sensors(request):
@@ -107,9 +104,21 @@ def view_sensors(request):
 
 
 def get_keg_info(request):
-    return JsonResponse({
+    response = {
         keg.pk: {
             "level": keg.current_level if keg.sensor else 0,
-            "currentPour": keg.current_pour_cost,
+            "currentPour": "${0:.2f}".format(keg.current_pour_cost),
         } for keg in KegModel.objects.all()
-    })
+    }
+    response["ver"] = get_keg_info.ver
+
+    return JsonResponse(response)
+get_keg_info.ver = 0
+
+
+def get_keg_block(request):
+    context = {
+        "kegs": sorted([k for k in KegModel.objects.all() if k.tap], key=lambda k: k.tap),
+    }
+
+    return render(request, "dashboard-data.html", context)

@@ -16,32 +16,32 @@ class FlowSensorModel(models.Model):
 
     def _pulse(self, channel):
         if hasattr(self, "kegmodel"):
-            if not hasattr(self, "first_tick"):
-                self.first_tick = True
             if not hasattr(self, "reset"):
                 self.reset = True
+            if not hasattr(self, "last_pour_time"):
+                self.last_pour_time = datetime.now()
+                return
 
-            if self.first_tick:
-                self.first_tick = False
+            if (datetime.now() - self.last_pour_time).total_seconds() >= FlowSensorModel.POUR_TIMEOUT:
+                self.reset = True
             else:
-                if (datetime.now() - self.kegmodel.last_pour_time).total_seconds() >= FlowSensorModel.POUR_TIMEOUT:
-                    self.first_tick = True
-                    self.reset = True
-                else:
-                    if self.reset:
-                        self.kegmodel.current_pour_volume = 0
-                        self.reset = False
+                vol = self.volume_per_pulse * FlowSensorModel.OZ_PER_ML
 
-                    vol = self.volume_per_pulse * FlowSensorModel.OZ_PER_ML
-                    self.kegmodel.current_pour_volume += vol
-                    self.kegmodel.current_level -= vol
+                if self.reset:
+                    self.kegmodel.current_pour_volume = 0
+                    self.reset = False
+                    vol *= 2
 
-                    if self.kegmodel.current_level < 0:
-                        self.kegmodel.current_level = 0
+                self.kegmodel.current_pour_volume += vol
+                self.kegmodel.current_level -= vol
 
-                    self.kegmodel.save()
+                if self.kegmodel.current_level < 0:
+                    self.kegmodel.current_level = 0
 
-            self.kegmodel.last_pour_time = datetime.now()
+                KegModel.objects.filter(pk=self.kegmodel.pk).update(current_level=self.kegmodel.current_level,
+                                                                    current_pour_volume=self.kegmodel.current_pour_volume)
+
+            self.last_pour_time = datetime.now()
 
     def __str__(self):
         return "Flow sensor (pin " + str(self.pin) + ")"
@@ -137,7 +137,6 @@ class KegModel(models.Model):
                                 validators=[MinValueValidator(0)])
     sensor = models.OneToOneField(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
     fill_date = models.DateField(default=None, null=True, blank=True)
-    last_pour_time = models.DateTimeField(default=datetime.now)
     current_pour_volume = models.FloatField(default=0)
 
     @property
@@ -152,14 +151,9 @@ class KegModel(models.Model):
 
     def __str__(self):
         capacities = dict(KegModel.CAPACITY_CHOICES)
-        return capacities[self.capacity] + " keg" if self.capacity in capacities else str(self.capacity) + " oz keg" + \
-            " (" + str(self.beverage or "empty") + ")"
-
-
-class SettingsModel(models.Model):
-    number_of_taps = models.PositiveIntegerField(default=1)
-    temperature = models.ForeignKey(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True,
-                                    blank=True)
+        return (capacities[self.capacity] + " keg" if self.capacity in capacities else str(self.capacity) + " oz keg") + \
+            " (" + str(self.beverage or "empty") + ", " + ("tap #" + str(self.tap) if self.tap else "untapped") + ")"
 
 
 sensor_models = (FlowSensorModel, WeightSensorModel, TemperatureSensorModel)
+
