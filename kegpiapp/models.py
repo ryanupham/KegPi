@@ -116,7 +116,7 @@ class TankModel(models.Model):
 
     def __str__(self):
         types = dict(TankModel.TYPE_CHOICES)
-        return types[self.type] + "(" + str(self.capacity) + "l)"
+        return types[self.type] + " (" + str(self.capacity) + "L)"
 
 
 class KegModel(models.Model):
@@ -132,7 +132,7 @@ class KegModel(models.Model):
     tap = models.PositiveIntegerField(default=None, null=True, blank=True,
                                       validators=[validators.validate_tap_unique])
     capacity = models.PositiveIntegerField(choices=CAPACITY_CHOICES)
-    current_level = models.FloatField(default=0, validators=[MinValueValidator(0)])  # TODO: automatically enter full on form page
+    current_level = models.FloatField(default=0, validators=[MinValueValidator(0)])
     price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True,
                                 validators=[MinValueValidator(0)])
     sensor = models.OneToOneField(FlowSensorModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
@@ -156,4 +156,3 @@ class KegModel(models.Model):
 
 
 sensor_models = (FlowSensorModel, WeightSensorModel, TemperatureSensorModel)
-

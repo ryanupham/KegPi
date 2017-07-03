@@ -26,4 +26,9 @@
             {% endfor %}
         {% endif %}
     </script>
+
+    {% if custom_js %}
+        {% load staticfiles %}
+        <script src="{% static custom_js %}"></script>
+    {% endif %}
 {% endblock script %}

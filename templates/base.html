@@ -24,10 +24,10 @@
     <ul id="sidebar" class="side-nav">
         <li><a class="waves-effect" href="/"><i class="material-icons">home</i>Home</a></li>
         <li><div class="divider"></div></li>
-        <li><a class="waves-effect" href="/view_beverages/">Beverages</a></li>
-        <li><a class="waves-effect" href="/view_kegs/">Kegs</a></li>
-        <li><a class="waves-effect" href="/view_tanks/">Gas tanks</a></li>
-        <li><a class="waves-effect" href="/view_sensors/">Sensors</a></li>
+        <li><a class="waves-effect" href="{% url "view beverages" %}">Beverages</a></li>
+        <li><a class="waves-effect" href="{% url "view kegs" %}">Kegs</a></li>
+        <li><a class="waves-effect" href="{% url "view gas tanks" %}">Gas tanks</a></li>
+        <li><a class="waves-effect" href="{% url "view sensors" %}">Sensors</a></li>
         <li><div class="divider"></div></li>
         <li><a class="waves-effect" href="#!"><i class="material-icons">settings</i>Settings</a></li>
     </ul>

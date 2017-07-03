@@ -1,17 +1,17 @@
 from django.contrib import messages
 from django.forms.models import modelform_factory
 from django.http.response import HttpResponseRedirect, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls.base import reverse
 
-from kegpiapp.models import FlowSensorModel, BeverageModel, KegModel
+from kegpiapp.models import FlowSensorModel, BeverageModel, KegModel, TankModel
 
 
 def view_main(request):
     return render(request, "dashboard.html")
 
 
-def _edit(request, redirect, form_factory, cls, model=None):
+def _edit(request, redirect, form_factory, cls, model=None, custom_js=None):
     form = form_factory(instance=model) if model else form_factory()
 
     if request.method == "POST":
@@ -32,7 +32,7 @@ def _edit(request, redirect, form_factory, cls, model=None):
             old.id = request.POST["old-id"]
             old.save()
 
-    return render(request, "editForm.html", {"form": form, "id": model.id if model else None})
+    return render(request, "editForm.html", {"form": form, "id": model.id if model else None, "custom_js": custom_js})
 
 
 def _remove(request, redirect, pk, cls):
@@ -43,13 +43,14 @@ def _remove(request, redirect, pk, cls):
     return HttpResponseRedirect(reverse(redirect))
 
 
-def _view_items(request, objects, title, new_url, edit_url, remove_url):
+def _view_items(request, objects, title, new_url, edit_url, remove_url, custom_js=None):
     context = {
         "objs": objects,
         "title": title,
         "new_url": new_url,
         "edit_url": edit_url,
         "remove_url": remove_url,
+        "custom_js": custom_js,
     }
 
     return render(request, "viewItems.html", context)
@@ -57,21 +58,28 @@ def _view_items(request, objects, title, new_url, edit_url, remove_url):
 
 def edit_beverage(request, pk=None):
     form_factory = modelform_factory(BeverageModel, exclude=())
-    model = BeverageModel.objects.get(pk=pk) if pk else None
+    model = get_object_or_404(BeverageModel, pk=pk) if pk else None
 
     return _edit(request, "view beverages", form_factory, BeverageModel, model)
 
 
 def edit_keg(request, pk=None):
     form_factory = modelform_factory(KegModel, exclude=("last_pour_volume", "last_pour_time", "current_pour_volume"))
-    model = KegModel.objects.get(pk=pk) if pk else None
+    model = get_object_or_404(KegModel, pk=pk) if pk else None
 
-    return _edit(request, "view kegs", form_factory, KegModel, model)
+    return _edit(request, "view kegs", form_factory, KegModel, model, "js/kegmodel_edit.js")
+
+
+def edit_gas(request, pk=None):
+    form_factory = modelform_factory(TankModel, exclude=())
+    model = get_object_or_404(TankModel, pk=pk) if pk else None
+
+    return _edit(request, "view gas tanks", form_factory, TankModel, model)
 
 
 def edit_sensor(request, pk=None):
     form_factory = modelform_factory(FlowSensorModel, exclude=())
-    model = FlowSensorModel.objects.get(pk=pk) if pk else None  # TODO: check if valid pk
+    model = get_object_or_404(FlowSensorModel, pk=pk) if pk else None
 
     return _edit(request, "view sensors", form_factory, FlowSensorModel, model)
 
@@ -82,6 +90,10 @@ def remove_beverage(request, pk):
 
 def remove_keg(request, pk):
     return _remove(request, "view kegs", pk, KegModel)
+
+
+def remove_gas(request, pk):
+    return _remove(request, "view gas tanks", pk, TankModel)
 
 
 def remove_sensor(request, pk):
@@ -96,6 +108,11 @@ def view_beverages(request):
 def view_kegs(request):
     kegs = list(KegModel.objects.filter(tap__gt=0).order_by("tap")) + list(KegModel.objects.exclude(tap__gt=0))
     return _view_items(request, kegs, "Kegs", "new keg", "edit keg", "remove keg")
+
+
+def view_gas(request):
+    return _view_items(request, TankModel.objects.all(), "Gas Tanks", "new gas tank", "edit gas tank",
+                       "remove gas tank")
 
 
 def view_sensors(request):
@@ -119,6 +136,7 @@ get_keg_info.ver = 0
 def get_keg_block(request):
     context = {
         "kegs": sorted([k for k in KegModel.objects.all() if k.tap], key=lambda k: k.tap),
+        "gas_tanks": TankModel.objects.all(),
     }
 
     return render(request, "dashboard-data.html", context)

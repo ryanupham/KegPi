@@ -85,3 +85,9 @@
 {% empty %}
     <div class="center-align"><h5>No kegs have been configured</h5></div>
 {% endfor %}
+
+<div class="gas-container">
+    {% for g in gas_tanks %}
+        <span>{{ g }}</span>
+    {% endfor %}
+</div>
