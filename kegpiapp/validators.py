@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.utils.translation import ugettext_lazy as _
 
-from kegpiapp.models import FlowSensorModel, sensor_models, KegModel
+from kegpiapp import models
 
 
 def validate_pin(value):
@@ -10,8 +10,8 @@ def validate_pin(value):
         raise ValidationError(_("%(value)s is not in valid pin range (2-27)"), params={"value": value})
 
     used_pins = []
-    for model in sensor_models:
-        used_pins.append(model.objects.values_list("pin", flat=True))
+    for model in models.sensor_models:
+        used_pins.extend(model.objects.values_list("pin", flat=True))
 
     if value in used_pins:
         raise ValidationError(_("Pin #%(value)s has already been used"), params={"value": value})
@@ -19,6 +19,6 @@ def validate_pin(value):
 
 def validate_tap_unique(value):
     if not (value == 0 or value is None):
-        used_taps = KegModel.objects.values_list("tap", flat=True)
+        used_taps = models.KegModel.objects.values_list("tap", flat=True)
         if value in used_taps:
             raise ValidationError("Tap #%(value)s has already been used", params={"value": value})

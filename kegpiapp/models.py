@@ -3,15 +3,16 @@ from datetime import datetime
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 
-from kegpiapp.validators import validate_pin, validate_tap_unique
+import kegpiapp.validators as validators
 
 
 class FlowSensorModel(models.Model):
     OZ_PER_ML = 0.033814
     POUR_TIMEOUT = 10  # Minimum time between pours in seconds
 
-    pin = models.PositiveIntegerField(unique=True, validators=[validate_pin])
-    volume_per_pulse = models.FloatField(default=0, help_text="Volume in ml per pulse of the sensor")  # TODO: minvaluevalidator
+    pin = models.PositiveIntegerField(validators=[validators.validate_pin])
+    volume_per_pulse = models.FloatField(default=0, help_text="Volume in ml per pulse of the sensor",
+                                         validators=[MinValueValidator(0)])
 
     def _pulse(self, channel):
         if hasattr(self, "kegmodel"):
@@ -47,7 +48,7 @@ class FlowSensorModel(models.Model):
 
 
 class WeightSensorModel(models.Model):
-    pin = models.PositiveIntegerField(unique=True, validators=[validate_pin])
+    pin = models.PositiveIntegerField(unique=True, validators=[validators.validate_pin])
     # pin2 = models.PositiveIntegerField(unique=True)
     pounds_per_volt = models.FloatField(default=0)
     zero_offset = models.FloatField(default=0)
@@ -73,7 +74,7 @@ class WeightSensorModel(models.Model):
 
 
 class TemperatureSensorModel(models.Model):
-    pin = models.PositiveIntegerField(unique=True, validators=[validate_pin])
+    pin = models.PositiveIntegerField(unique=True, validators=[validators.validate_pin])
     degrees_per_volt = models.FloatField(default=0, help_text="Degrees F per volt of the sensor")
     zero_offset = models.FloatField(default=0, help_text="Sensor reading at 0F")
 
@@ -128,8 +129,8 @@ class KegModel(models.Model):
     )
 
     beverage = models.ForeignKey(BeverageModel, default=None, on_delete=models.SET_DEFAULT, null=True, blank=True)
-    tap = models.PositiveIntegerField(unique=True, default=None, null=True, blank=True,
-                                      validators=[validate_tap_unique])
+    tap = models.PositiveIntegerField(default=None, null=True, blank=True,
+                                      validators=[validators.validate_tap_unique])
     capacity = models.PositiveIntegerField(choices=CAPACITY_CHOICES)
     current_level = models.FloatField(default=0, validators=[MinValueValidator(0)])  # TODO: automatically enter full on form page
     price = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True,
@@ -141,7 +142,9 @@ class KegModel(models.Model):
 
     @property
     def price_per_oz(self):
-        return float(self.price) / self.capacity
+        if self.capacity == 0:
+            return 0
+        return float(self.price or 0) / self.capacity
 
     @property
     def current_pour_cost(self):
