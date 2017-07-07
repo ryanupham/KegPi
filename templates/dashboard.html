@@ -6,7 +6,7 @@
     <script src="{% static "lib/raphael-2.1.4.min.js" %}"></script>
     <script src="{% static "lib/justgage.js" %}"></script>
 
-    <div id="keg-block"></div>
+    <div id="data-block"></div>
 {% endblock body %}
 
 {% block css %}
@@ -15,57 +15,76 @@
 
 {% block script %}
     <script>
-        function createGauge(keg) {
-            return new JustGage({
-                id: keg.id,
-                value: keg.value,
+        function createGauge(id, pk, capacity, symbol, label, relative, donut) {
+            let gauge = new JustGage({
+                id: id,
+                value: 0,
                 min: 0,
-                max: keg.capacity,
-                label: "oz",
+                max: capacity,
+                symbol: symbol,
+                label: label,
                 levelColors: ["#ff0000", "#f9c802", "#a9d70b"],
                 hideMinMax: true,
-                relativeGaugeSize: true
+                relativeGaugeSize: relative,
+                donut: donut
             });
+            gauge.pk = pk;
+
+            return gauge;
         }
 
-        var gauges = [];
-        var ver = -1;
+        function createKegGauge(id, pk, capacity) {
+            return createGauge(id, pk, capacity, " oz", "", true, false);
+        }
 
-        function initKegData() {
-            gauges = [];
 
-            $(".level").each(function (ind, val) {
-                var gauge = createGauge({
-                    id: val.id,
-                    value: 0,
-                    capacity: val.dataset.capacity
-                });
-                gauge.pk = val.dataset.pk;
+        function createGasGauge(id, pk, gasType) {
+            return createGauge(id, pk, 100, "%", gasType, false, true);
+        }
 
-                gauges.push(gauge);
+        let keg_gauges = [];
+        let gas_gauges = [];
+        let ver = -1;
+
+        function initData() {
+            keg_gauges = [];
+            gas_gauges = [];
+
+            $(".beverage-level").each(function(ind, val) {
+                let gauge = createKegGauge(val.id, val.dataset.pk, val.dataset.capacity);
+                keg_gauges.push(gauge);
+            });
+
+            $(".gas-level").each(function(ind, val) {
+                let gauge = createGasGauge(val.id, val.dataset.pk, val.dataset.gasType);
+                gas_gauges.push(gauge);
             });
 
             $('.collapsible').collapsible();
             $('.dropdown-button').dropdown();
         }
 
-        function reloadKegData() {
-            $("#keg-block").load("{% url 'keg block' %}", initKegData);
+        function reloadData() {
+            $("#data-block").load("{% url 'data block' %}", initData);
         }
 
         function refresh() {
-            $.ajax("{% url 'keg info' %}").done(function(msg) {
+            $.ajax("{% url 'state info' %}").done(function(msg) {
                 if(ver != msg.ver) {
                     ver = msg.ver;
-                    reloadKegData();
+                    reloadData();
                 } else {
-                    for (g of gauges)
-                        if (g.pk in msg)
-                            g.refresh(msg[g.pk].level);
+                    for (let g of gas_gauges)
+                        if (g.pk in msg.gas)
+                            g.refresh(msg.gas[g.pk].level);
+
+                    for (let g of keg_gauges)
+                        if (g.pk in msg.kegs)
+                            g.refresh(msg.kegs[g.pk].level);
 
                     $(".last-pour").each(function(ind, val) {
-                        if(val.dataset.pk in msg)
-                            $(val).text(msg[val.dataset.pk].currentPour);
+                        if(val.dataset.pk in msg.kegs)
+                            $(val).text(msg.kegs[val.dataset.pk].currentPour);
                     })
                 }
             });

@@ -114,9 +114,17 @@ class TankModel(models.Model):
     density = models.FloatField(help_text="Density of the gas in kg/l", default=0, blank=True,
                                 validators=[MinValueValidator(0)])
 
-    def __str__(self):
+    @property
+    def current_level(self):
+        return 100  # TODO
+
+    @property
+    def gas_type(self):
         types = dict(TankModel.TYPE_CHOICES)
-        return types[self.type] + " (" + str(self.capacity) + "L)"
+        return types[self.type]
+
+    def __str__(self):
+        return self.gas_type + " (" + str(self.capacity) + "L)"
 
 
 class KegModel(models.Model):

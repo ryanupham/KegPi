@@ -2,7 +2,7 @@ from django.db.models.signals import post_save
 from django.dispatch.dispatcher import receiver
 
 from kegpiapp.models import FlowSensorModel
-from kegpiapp.views import get_keg_info
+from kegpiapp.views import get_state_info
 
 try:
     import RPi.GPIO as GPIO
@@ -21,7 +21,7 @@ def flow_sensor_after_save(sender, instance, **kwargs):
 
 @receiver(post_save)
 def model_after_save(**kwargs):
-    get_keg_info.ver += 1
+    get_state_info.ver += 1
 
 if has_gpio:
     GPIO.setmode(GPIO.BCM)

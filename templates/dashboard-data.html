@@ -54,7 +54,7 @@
                             </li>
                         </ul>
                     </div>
-                    <div class="col s3"><div id="level{{ k.pk }}" class="level" data-capacity="{{ k.capacity }}" data-pk="{{ k.pk }}"></div></div>
+                    <div class="col s3"><div id="beverage-level{{ k.pk }}" class="beverage-level" data-capacity="{{ k.capacity }}" data-pk="{{ k.pk }}"></div></div>
                 </div>
             </div>
             <div class="collapsible-body extra-keg-info">
@@ -88,6 +88,6 @@
 
 <div class="gas-container">
     {% for g in gas_tanks %}
-        <span>{{ g }}</span>
+        <div id="gas-level{{ g.pk }}" class="gas-level" data-pk="{{ g.pk }}" data-gas-type="{{ g.gas_type }}"></div>
     {% endfor %}
 </div>

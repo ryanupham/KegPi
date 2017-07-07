@@ -120,17 +120,24 @@ def view_sensors(request):
                        "remove sensor")
 
 
-def get_keg_info(request):
+def get_state_info(request):
     response = {
-        keg.pk: {
-            "level": keg.current_level if keg.sensor else 0,
-            "currentPour": "${0:.2f}".format(keg.current_pour_cost),
-        } for keg in KegModel.objects.all()
+        "kegs": {
+            keg.pk: {
+                "level": keg.current_level if keg.sensor else 0,
+                "currentPour": "${0:.2f}".format(keg.current_pour_cost),
+            } for keg in KegModel.objects.all()
+        },
+        "gas": {
+            gas.pk: {
+                "level": gas.current_level if gas.sensor else 0,
+            } for gas in TankModel.objects.all()
+        },
+        "ver": get_state_info.ver
     }
-    response["ver"] = get_keg_info.ver
 
     return JsonResponse(response)
-get_keg_info.ver = 0
+get_state_info.ver = 0
 
 
 def get_keg_block(request):
